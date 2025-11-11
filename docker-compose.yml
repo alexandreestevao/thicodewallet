@@ -1,45 +1,59 @@
+version: '3.8'
+
 services:
   mongo-wallet:
+    container_name: mongo-wallet        # nome alinhado com os demais
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
-      - mongdb-wallet-volume:/data/db
+      - mongdb-volume:/data/db
     restart: always
+    networks:
+      - net-wallet
 
   api:
     container_name: api-wallet
     build: ./api
-    restart: always
     ports:
-      - 5002:5002
+      - "5002:5002"
     depends_on:
       - mongo-wallet
     env_file:
       - ./api/.env
+    networks:
+      - net-wallet
+    restart: always
 
   spa:
     container_name: spa-wallet
     build: ./spa
-    depends_on:
-      - api
     env_file:
       - ./spa/.env
     volumes:
       - spa-volume:/var/www/html
+    depends_on:
+      - api
+    networks:
+      - net-wallet
 
   nginx:
     container_name: nginx-wallet
     build: ./nginx
     ports:
-      - 80:80
+      - "80:80"
     volumes:
       - spa-volume:/var/www/html
     depends_on:
-      - mongo-wallet
-      - api
       - spa
+      - api
+      - mongo-wallet
+    networks:
+      - net-wallet
 
 volumes:
-  mongdb-wallet-volume:
+  mongdb-volume:
   spa-volume:
+
+networks:
+  net-wallet:
